@@ -1,0 +1,22 @@
+kafka-python
+poyo
+pytest
+pytz
+requests
+pandas
+# pandas_udf and Arrow-based toPandas() need it (Spark 4.1: PyArrow >= 15)
+pyarrow
+scikit-learn
+joblib
+pytest-spark
+confluent-kafka
+psycopg2-binary
+SQLAlchemy
+Flask-SQLAlchemy
+configparser
+Jinja2
+Werkzeug
+jupyterlab
+markupsafe
+# must match SPARK_VERSION in the Dockerfile
+pyspark==4.1.3
