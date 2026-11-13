@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: spark-submit
+  namespace: spark-demo
+spec:
+  serviceAccountName: spark
+  restartPolicy: Never
+  containers:
+    - name: spark-submit
+      image: image-registry.openshift-image-registry.svc:5000/spark-demo/spark-app:latest
+      imagePullPolicy: Always
+      env:
+        # user name that Spark shows (e.g. in the Spark UI); without it, it is the random UID number
+        - name: SPARK_USER
+          value: spark
+      command: ["/opt/spark/bin/spark-submit"]
+      args:
+        - --master=k8s://https://kubernetes.default.svc:443
+        - --deploy-mode=cluster
+        - --name=pyspark-on-openshift
+        - --conf=spark.kubernetes.namespace=spark-demo
+        - --conf=spark.kubernetes.driver.pod.name=pyspark-on-openshift-driver
+        - --conf=spark.kubernetes.container.image=image-registry.openshift-image-registry.svc:5000/spark-demo/spark-app:latest
+        - --conf=spark.kubernetes.container.image.pullPolicy=Always
+        - --conf=spark.kubernetes.authenticate.driver.serviceAccountName=spark
+        # spark-submit talks to the API server with the token of the pod's service account
+        - --conf=spark.kubernetes.authenticate.submission.caCertFile=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        - --conf=spark.kubernetes.authenticate.submission.oauthTokenFile=/var/run/secrets/kubernetes.io/serviceaccount/token
+        - --conf=spark.executor.instances=2
+        # keep the demo small enough for a laptop
+        - --conf=spark.driver.memory=512m
+        - --conf=spark.executor.memory=512m
+        - --conf=spark.kubernetes.driver.request.cores=500m
+        - --conf=spark.kubernetes.executor.request.cores=500m
+        - local:///opt/spark/work-dir/app/spark_on_k8s_app.py

@@ -1,0 +1,19 @@
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: spark-app
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: spark-app
+spec:
+  source:
+    type: Binary          # files come from "oc start-build --from-dir"
+  strategy:
+    type: Docker          # build them with the Dockerfile
+    dockerStrategy: {}
+  output:
+    to:
+      kind: ImageStreamTag
+      name: spark-app:latest

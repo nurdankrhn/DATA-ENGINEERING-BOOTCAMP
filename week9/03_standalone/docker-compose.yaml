@@ -1,0 +1,107 @@
+services:
+  spark-master:
+    container_name: spark-master
+    image: spark:4.1.4-java21-python3
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: "2g"
+    ports:
+      - "4040:4040"
+      - "7077:7077"
+      - "8080:8080"
+    networks:
+      - vbo
+    command: >
+      /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master
+      --host spark-master --port 7077 --webui-port 8080
+
+  spark-worker:
+    image: spark:4.1.4-java21-python3
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: "2g"
+    depends_on:
+      - spark-master
+    ports:
+      - "8081-8089:8081"
+    networks:
+      - vbo
+    command: >
+      /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker
+      spark://spark-master:7077 --webui-port 8081
+
+  spark-client:
+    container_name: spark-client
+    image: spark:4.1.4-java21-python3
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: "2g"
+    depends_on:
+      - spark-master
+    ports:
+      - "4041:4040"
+    networks:
+      - vbo
+    volumes:
+      - ./spark_client/examples:/opt/examples
+    command: sleep infinity
+
+  # Spark Connect server: the driver lives here, clients talk gRPC on 15002
+  spark-connect:
+    container_name: spark-connect
+    image: spark:4.1.4-java21-python3
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: "2g"
+    depends_on:
+      - spark-master
+    ports:
+      - "15002:15002"
+      - "4042:4040"
+    networks:
+      - vbo
+    environment:
+      - SPARK_NO_DAEMONIZE=true
+      - SPARK_LOG_DIR=/tmp/spark-logs
+    command: >
+      /opt/spark/sbin/start-connect-server.sh
+      --master spark://spark-master:7077
+      --conf spark.driver.host=spark-connect
+      --conf spark.jars.ivy=/tmp/.ivy2
+      --packages org.apache.hadoop:hadoop-aws:3.4.2
+      --conf spark.hadoop.fs.s3a.endpoint=http://rustfs:9000
+      --conf spark.hadoop.fs.s3a.access.key=dataops
+      --conf spark.hadoop.fs.s3a.secret.key=Ankara06
+      --conf spark.hadoop.fs.s3a.path.style.access=true
+
+# S3 compatible object storage
+  rustfs:
+    restart: always
+    image: rustfs/rustfs:latest
+    container_name: rustfs-standalone
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    networks:
+      - vbo
+    environment:
+      - RUSTFS_ACCESS_KEY=dataops
+      - RUSTFS_SECRET_KEY=Ankara06
+      - RUSTFS_VOLUMES=/data
+      - RUSTFS_ADDRESS=:9000
+    volumes:
+      - rustfs_data:/data
+
+volumes:
+  rustfs_data:
+
+networks:
+  vbo:
