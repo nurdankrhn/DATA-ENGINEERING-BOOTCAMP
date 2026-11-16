@@ -1,0 +1,27 @@
+kafka-python
+poyo
+pytest
+pytz
+requests
+pandas
+# pandas_udf and Arrow-based toPandas() need it (Spark 4.1: PyArrow >= 15)
+pyarrow
+scikit-learn
+joblib
+pytest-spark
+confluent-kafka
+psycopg2-binary
+SQLAlchemy
+Flask-SQLAlchemy
+configparser
+Jinja2
+Werkzeug
+jupyterlab
+markupsafe
+# must match SPARK_VERSION in the Dockerfile
+pyspark==4.1.4
+# Spark Connect client (pyspark[connect]); spark-pipelines and SparkSession.builder.remote() need it
+grpcio>=1.67
+grpcio-status>=1.67
+googleapis-common-protos>=1.65
+zstandard>=0.25.0

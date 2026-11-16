@@ -1,0 +1,27 @@
+# Spark Declarative Pipelines spec. `spark-pipelines run` looks for spark-pipeline.yml in the
+# current directory, or takes --spec <path>.
+name: orders_pipeline
+
+# Where the datasets land: tables in this catalog / database (the database must exist).
+# `lakehouse` is the Polaris Iceberg catalog of 00_spark_compose, configured in the image's spark-defaults.conf.
+catalog: lakehouse
+database: orders_dp
+
+# Checkpoints of streaming tables and other pipeline state. This must outlive the driver and be
+# reachable from every node, so it goes to object storage (RustFS here), never to a local disk.
+storage: s3a://warehouse/pipelines/orders_pipeline
+
+# Runtime confs for the pipeline session. The fs.s3a.* entries tell Hadoop's S3A client how to reach
+# RustFS; the `lakehouse` catalog itself is configured in the image's spark-defaults.conf.
+configuration:
+  spark.sql.shuffle.partitions: "4"
+  fs.s3a.endpoint: http://rustfs:9000
+  fs.s3a.path.style.access: "true"
+  fs.s3a.access.key: dataops
+  fs.s3a.secret.key: Ankara06
+
+# Which files define the datasets. Python and SQL can be mixed.
+# Only simple patterns are allowed: a path, or a folder followed by /** (not **/*.py).
+libraries:
+  - glob:
+      include: transformations/**
